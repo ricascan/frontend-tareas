@@ -54,7 +54,7 @@
                 this.tarea = '';
             },
             eliminarTarea(index){
-                this.listTareas.splice(index)
+                this.listTareas.splice(index, 1)
             },
             editarTarea(tarea){
                 tarea.estado = !tarea.estado;
