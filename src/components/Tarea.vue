@@ -5,7 +5,7 @@
         <div class="col-lg-8 offset-lg-2">
             <div class="card mt-4">
                 <div class="card-body">
-                    <div class="input-group">
+                    <div class="input-group mb-3">
                         <input type="text" v-model="tarea"
                             class="form-control form-control-lg" placeholder="Agregar Tarea">
                         <div class="input-group-append">
@@ -14,16 +14,21 @@
                         </div>
                     </div> 
                     <br>
-                    <h5 v-if="this.listTareas.length == 0">No hay tareas para realizar</h5>
-                    <ul class="list-group">
+                    <div class="text-center">
+                        <div v-if="loading" class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                    <h5 v-if="this.listTareas.length == 0">No hay tareas para realizar</h5> 
+                    <ul v-if="loading == false" class="list-group">
                         <li v-for="(tarea, index) of listTareas" :key="index" 
                             class="list-group-item d-flex justify-content-between">
-                            <span v-on:click="editarTarea(tarea)" v-bind:class="{'text-success' : tarea.estado}">
+                            <span v-on:click="editarTarea(tarea.id)" v-bind:class="{'text-success' : tarea.estado}">
                                 <i v-bind:class="[tarea.estado ? 'fas fa-check-circle' : 'far fa-circle']"></i>
 
                             </span>
                             {{tarea.nombre}}
-                            <span v-on:click="eliminarTarea(index)"
+                            <span v-on:click="eliminarTarea(tarea.id)"
                                 class="text-danger cursor">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
@@ -36,12 +41,15 @@
 </template>
 
 <script>
+    import axios from "axios";
+    const URL = "https://tareasrcc.azurewebsites.net/api/tareas/"
     export default {
         name: 'Tarea',
         data() {
             return {
                 tarea: '',
-                listTareas: []
+                listTareas: [],
+                loading: false
             }
         },
         methods: {
@@ -50,15 +58,42 @@
                     nombre: this.tarea,
                     estado: false
                 }
-                this.listTareas.push(tarea);
+                this.loading = true;
+                axios.post(URL, tarea).then(response => {
+                    console.log(response);
+                    this.obtenerTareas();
+                }).catch(error => {
+                    console.error(error);
+                }).finally(this.loading = false);
                 this.tarea = '';
             },
-            eliminarTarea(index){
-                this.listTareas.splice(index, 1)
+            eliminarTarea(id){
+                axios.delete(URL + id)
+                .then(response => {
+                    console.log(response);
+                    this.obtenerTareas();
+                }).catch(error => console.error(error));
             },
-            editarTarea(tarea){
-                tarea.estado = !tarea.estado;
+            editarTarea(id){
+                this.loading = true;
+                axios.put(URL + id)
+                .then(response => {
+                    console.log(response);
+                    this.obtenerTareas();
+                    
+                }).catch(error => console.error(error))
+                    .finally(this.loading = false);
+            },
+            obtenerTareas(){
+                
+                axios.get(URL).then(response => {
+                    console.log(response);
+                    this.listTareas = response.data;
+                })
             }
+        },
+        created: function () {
+            this.obtenerTareas();
         }
     }
 </script>
